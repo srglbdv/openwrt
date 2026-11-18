@@ -123,15 +123,19 @@ econet_ubi_rootfs_data() {
 	return 0
 }
 
-case "$(cat /tmp/sysinfo/board_name 2>/dev/null)" in
-zte,zxhn-h267a)
-	# The recovery page's erase only covers this board's ubi partition's
-	# first 24 MiB (of 91.25 MiB) -- the clean "empty device" case UBI
-	# auto-formats. The remaining tail is left stale from whatever was
-	# flashed before, which can make the kernel-side `ubi.mtd=ubi` attach
-	# fail outright instead; econet_ubi_reformat() detects that (no
-	# /dev/ubi0) and reformats the whole partition first.
-	econet_ubi_mtd_part="ubi"
-	boot_hook_add preinit_main econet_ubi_rootfs_data
-	;;
-esac
+# The board check runs inside the hook: when preinit sources this file,
+# /tmp/sysinfo/board_name does not exist yet, so a check at source time
+# never matched and the hook was never added.
+econet_ubi_preinit() {
+	case "$(cat /tmp/sysinfo/board_name 2>/dev/null)" in
+	zte,zxhn-h267a)
+		# The recovery page's erase only covers the first 24 MiB of this
+		# board's ubi partition; a stale tail can make the kernel-side
+		# `ubi.mtd=ubi` attach fail, which econet_ubi_reformat() repairs.
+		econet_ubi_mtd_part="ubi"
+		econet_ubi_rootfs_data
+		;;
+	esac
+}
+
+boot_hook_add preinit_main econet_ubi_preinit

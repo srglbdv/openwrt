@@ -27,6 +27,21 @@
 		reg = <0x00000000 0x08000000>;	/* Memory size 128MB */
 	};
 
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* crash log kept across a warm reboot: /sys/fs/pstore after the next boot */
+		ramoops@5000000 {
+			compatible = "ramoops";
+			reg = <0x05000000 0x00100000>;
+			record-size = <0x20000>;
+			console-size = <0x40000>;
+			ecc-size = <16>;
+		};
+	};
+
 	chosen {
 		stdout-path = "/serial@1fbf0000:115200";
 		/*
@@ -98,6 +113,9 @@
  * reset_control_get_exclusive() would -EBUSY on a double claim.
  */
  &ethernet {
+	/* hw V1.0.2: chip id 0x00050003 has a PDMA frame engine, no QDMA.
+	 * Bound by kmod-mt7510-eth instead of econet_eth. */
+	compatible = "mediatek,mt7510-eth";
 	reg = <0x1fb50000 0x8000>;
 	/* Exclude FE_RST (wipes the bootloader's FE/MAC config) and GSW_RST
 	 * (claimed by the switch node) from the dtsi's reset list.
@@ -761,9 +779,22 @@
 				 * CSP upload path can only write the kernel and rootfs
 				 * slots.
 				 */
+				/*
+				 * hw V1.0.2 (17/11/2026): the stock slot-2 area must stay
+				 * erased. With UBI data written here by Linux the bootloader
+				 * stops in its rescue mode on the next power-on (it probes the
+				 * slot-2 header at 0x1a80000 and cannot read Linux-written
+				 * pages - the same reason sysupgrade images are rejected).
+				 * The rescue page erases this range on every upload.
+				 */
 				partition@1a80000 {
+					label = "slot2-keep-erased";
+					reg = <0x1A80000 0x1800000>;
+					read-only;
+				};
+				partition@3280000 {
 					label = "ubi";
-					reg = <0x1A80000 0x5B40000>;
+					reg = <0x3280000 0x4340000>;
 				};
 			};
 		};

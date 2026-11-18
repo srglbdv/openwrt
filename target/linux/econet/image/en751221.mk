@@ -159,7 +159,7 @@ define Device/zte_zxhn-h267a
   # modem baseline (qmi/cdc-ether/cdc-mbim/rndis + matching proto
   # packages), untested against specific hardware. kmod-usb-ledtrig-
   # usbport: USB panel LED uses the kernel's own trigger.
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-gpio-button-hotplug \
+  DEVICE_PACKAGES := kmod-mt7510-eth kmod-mt7603 kmod-mt76x2 kmod-gpio-button-hotplug \
 	kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport usbutils \
 	kmod-usb-storage kmod-usb-storage-extras block-mount \
 	kmod-fs-vfat kmod-fs-exfat kmod-fs-ext4 kmod-fs-ntfs3 \
